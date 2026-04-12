@@ -1,0 +1,16 @@
+[build]
+builder = "dockerfile"
+
+[deploy]
+healthcheckPath = "/health"
+healthcheckTimeout = 100
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 10
+
+[[services]]
+name = "bot"
+
+[services.variables]
+BOT_TOKEN = "${{ secrets.BOT_TOKEN }}"
+DOWNLOAD_DIR = "/tmp/downloads"
+MAX_FILE_SIZE_MB = "50"
