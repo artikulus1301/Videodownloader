@@ -31,7 +31,16 @@ async def main():
 
     logger.info("Bot started!")
     await bot.delete_webhook(drop_pending_updates=True)
-    await dp.start_polling(bot)
+    
+    # Run bot polling without blocking health server
+    polling_task = asyncio.create_task(dp.start_polling(bot))
+    
+    try:
+        await polling_task
+    except asyncio.CancelledError:
+        logger.info("Bot polling cancelled")
+    finally:
+        await health_runner.cleanup()
 
 
 if __name__ == "__main__":
