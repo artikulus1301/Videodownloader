@@ -7,8 +7,6 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.fsm.storage.memory import MemoryStorage
 
-from config import config
-from handlers import router
 from health_server import start_health_server
 
 logging.basicConfig(
@@ -19,17 +17,40 @@ logger = logging.getLogger(__name__)
 
 
 async def main():
-    # Start health server
-    health_runner = await start_health_server()
+    # Start health server FIRST before anything else
+    logger.info("Starting health server...")
+    try:
+        health_runner = await start_health_server()
+        logger.info("Health server started successfully on port 8000")
+    except Exception as e:
+        logger.error(f"Failed to start health server: {e}")
+        raise
     
-    bot = Bot(
-        token=config.BOT_TOKEN,
-        default=DefaultBotProperties(parse_mode=ParseMode.HTML)
-    )
-    dp = Dispatcher(storage=MemoryStorage())
-    dp.include_router(router)
+    # Now load config (may fail if BOT_TOKEN not set)
+    try:
+        from config import config
+        logger.info("Config loaded successfully")
+    except Exception as e:
+        logger.error(f"Failed to load config: {e}")
+        await health_runner.cleanup()
+        raise
+    
+    # Initialize bot
+    try:
+        bot = Bot(
+            token=config.BOT_TOKEN,
+            default=DefaultBotProperties(parse_mode=ParseMode.HTML)
+        )
+        dp = Dispatcher(storage=MemoryStorage())
+        from handlers import router
+        dp.include_router(router)
+        logger.info("Bot initialized successfully")
+    except Exception as e:
+        logger.error(f"Failed to initialize bot: {e}")
+        await health_runner.cleanup()
+        raise
 
-    logger.info("Bot started!")
+    logger.info("Starting bot polling...")
     await bot.delete_webhook(drop_pending_updates=True)
     
     # Run bot polling without blocking health server
@@ -44,4 +65,8 @@ async def main():
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+    except Exception as e:
+        logger.error(f"Fatal error: {e}")
+        raise
