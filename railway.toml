@@ -2,10 +2,14 @@
 builder = "dockerfile"
 
 [deploy]
+startCommand = "python bot.py"
 healthcheckPath = "/health"
-healthcheckTimeout = 100
+healthcheckTimeout = 300
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 10
+
+[[ports]]
+port = 8000
 
 [[services]]
 name = "bot"

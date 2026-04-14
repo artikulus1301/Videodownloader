@@ -22,6 +22,8 @@ async def main():
     try:
         health_runner = await start_health_server()
         logger.info("Health server started successfully on port 8000")
+        # Small delay to ensure health server is fully ready
+        await asyncio.sleep(1)
     except Exception as e:
         logger.error(f"Failed to start health server: {e}")
         raise
